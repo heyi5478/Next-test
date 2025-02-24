@@ -1,4 +1,5 @@
-import { fetchUsers } from "@/services/api";
+import { fetchUsers, fetchUserById } from "@/services/api";
+import { GetStaticProps } from "next";
 
 export async function getStaticPaths() {
   const data = await fetchUsers();
@@ -11,23 +12,25 @@ export async function getStaticPaths() {
   };
 }
 
-export async function getStaticProps({ params }: { params: { id: string } }) {
-  const data = await fetchUsers();
-  const route = data.find((route: { id: number }) => route.id === +params.id);
-
-  return {
-    props: { route },
-  };
-}
-
 type Route = {
   id: number;
   name: string;
-  website: string;
-  address: {
+  website?: string;
+  address?: {
     city: string;
   };
   // Add other properties of the route object if needed
+}
+
+
+export const getStaticProps: GetStaticProps = async ({ params }) => {
+  if (!params?.id) return { notFound: true };
+  const id = Array.isArray(params.id) ? params.id[0] : params.id;
+  const data = await fetchUserById(id);
+  
+  return {
+    props: { route: data },
+  };
 }
 
 const Detail = ({ route }: { route: Route }) => {
@@ -36,7 +39,7 @@ const Detail = ({ route }: { route: Route }) => {
       <h1>{route.name}</h1>
       <p>ID: {route.id}</p>
       <p>{route.website}</p>
-      <p>{route.address.city}</p>
+      {route.address && <p>{route.address.city}</p>}
       {/* Render other properties of the route object if needed */}
     </div>
   );
